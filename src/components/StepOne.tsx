@@ -1,5 +1,6 @@
 import type { StepOneData } from "./StoryRegistrationForm";
-import FormField from "./FormField";
+import FloatingInput from "./FloatingInput";
+import FloatingSelect from "./FloatingSelect";
 
 interface StepOneProps {
   data: StepOneData;
@@ -9,10 +10,18 @@ interface StepOneProps {
 }
 
 const STANDARDS = [
-  "Select Standard",
-  "1st", "2nd", "3rd", "4th", "5th",
-  "6th", "7th", "8th", "9th", "10th",
-  "11th", "12th",
+  { value: "1st", label: "1st" },
+  { value: "2nd", label: "2nd" },
+  { value: "3rd", label: "3rd" },
+  { value: "4th", label: "4th" },
+  { value: "5th", label: "5th" },
+  { value: "6th", label: "6th" },
+  { value: "7th", label: "7th" },
+  { value: "8th", label: "8th" },
+  { value: "9th", label: "9th" },
+  { value: "10th", label: "10th" },
+  { value: "11th", label: "11th" },
+  { value: "12th", label: "12th" },
 ];
 
 const StepOne = ({ data, onChange, onNext, direction }: StepOneProps) => {
@@ -22,104 +31,90 @@ const StepOne = ({ data, onChange, onNext, direction }: StepOneProps) => {
 
   return (
     <div className={direction === "forward" ? "animate-slide-left" : "animate-slide-right"}>
-      <h2 className="text-xl font-bold font-display text-foreground mb-6">
-        Step 1: Personal Details
-      </h2>
+      <h2 className="text-lg font-semibold text-foreground mb-1">Personal Details</h2>
+      <p className="text-xs text-muted-foreground mb-6">Fill in your information to get started</p>
 
       <div className="space-y-4">
-        <FormField label="Name" required>
-          <input
-            type="text"
+        <div className="opacity-0 animate-fade-up stagger-1">
+          <FloatingInput
+            label="Full Name"
             value={data.name}
-            onChange={(e) => update("name", e.target.value)}
-            placeholder="Enter your full name"
-            className="form-input"
+            onChange={(v) => update("name", v)}
+            required
             maxLength={100}
           />
-        </FormField>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField label="Standard">
-            <select
-              value={data.standard}
-              onChange={(e) => update("standard", e.target.value)}
-              className="form-input"
-            >
-              {STANDARDS.map((s) => (
-                <option key={s} value={s === "Select Standard" ? "" : s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </FormField>
-
-          <FormField label="Section">
-            <input
-              type="text"
-              value={data.section}
-              onChange={(e) => update("section", e.target.value)}
-              placeholder="e.g. A, B, C"
-              className="form-input"
-              maxLength={50}
-            />
-          </FormField>
         </div>
 
-        <FormField label="School Name" required>
-          <input
-            type="text"
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="opacity-0 animate-fade-up stagger-2">
+            <FloatingSelect
+              label="Standard"
+              value={data.standard || ""}
+              onChange={(v) => update("standard", v)}
+              options={STANDARDS}
+            />
+          </div>
+          <div className="opacity-0 animate-fade-up stagger-2">
+            <FloatingInput
+              label="Section"
+              value={data.section || ""}
+              onChange={(v) => update("section", v)}
+              maxLength={50}
+            />
+          </div>
+        </div>
+
+        <div className="opacity-0 animate-fade-up stagger-3">
+          <FloatingInput
+            label="School Name"
             value={data.schoolName}
-            onChange={(e) => update("schoolName", e.target.value)}
-            placeholder="Enter your school name"
-            className="form-input"
+            onChange={(v) => update("schoolName", v)}
+            required
             maxLength={200}
           />
-        </FormField>
+        </div>
 
-        <FormField label="Parent's Name" required>
-          <input
-            type="text"
+        <div className="opacity-0 animate-fade-up stagger-4">
+          <FloatingInput
+            label="Parent's Name"
             value={data.parentName}
-            onChange={(e) => update("parentName", e.target.value)}
-            placeholder="Enter parent's full name"
-            className="form-input"
+            onChange={(v) => update("parentName", v)}
+            required
             maxLength={100}
           />
-        </FormField>
+        </div>
 
-        <FormField label="Email ID" required>
-          <input
+        <div className="opacity-0 animate-fade-up stagger-5">
+          <FloatingInput
+            label="Email Address"
             type="email"
             value={data.email}
-            onChange={(e) => update("email", e.target.value)}
-            placeholder="your@email.com"
-            className="form-input"
+            onChange={(v) => update("email", v)}
+            required
             maxLength={255}
           />
-        </FormField>
+        </div>
 
-        <FormField label="Mobile Number" required>
-          <input
+        <div className="opacity-0 animate-fade-up stagger-6">
+          <FloatingInput
+            label="Mobile Number"
             type="tel"
             value={data.mobile}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-              update("mobile", val);
+            onChange={(v) => {
+              const clean = v.replace(/\D/g, "").slice(0, 10);
+              update("mobile", clean);
             }}
-            placeholder="10-digit mobile number"
-            className="form-input"
+            required
             maxLength={10}
           />
-        </FormField>
+        </div>
       </div>
 
-      <button
-        onClick={onNext}
-        className="w-full mt-6 py-3 px-6 gradient-gold text-secondary-foreground font-semibold rounded-lg 
-          hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-lg"
-      >
-        Next → Step 2
-      </button>
+      <div className="opacity-0 animate-fade-up stagger-7 mt-8">
+        <button onClick={onNext} className="btn-premium w-full">
+          Continue to Story Details
+        </button>
+      </div>
     </div>
   );
 };

@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import ProgressBar from "@/components/ProgressBar";
 import StepOne from "@/components/StepOne";
 import StepTwo from "@/components/StepTwo";
 import SuccessScreen from "@/components/SuccessScreen";
+import { BookOpen } from "lucide-react";
 
 // Validation schemas
 export const stepOneSchema = z.object({
@@ -34,7 +35,6 @@ const StoryRegistrationForm = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const { toast } = useToast();
 
-  // Step 1 form data
   const [stepOneData, setStepOneData] = useState<StepOneData>({
     name: "",
     standard: "",
@@ -45,7 +45,6 @@ const StoryRegistrationForm = () => {
     mobile: "",
   });
 
-  // Step 2 form data
   const [stepTwoData, setStepTwoData] = useState<StepTwoData>({
     storyTitle: "",
     storyCategory: "",
@@ -55,11 +54,10 @@ const StoryRegistrationForm = () => {
   const handleStepOneNext = () => {
     const result = stepOneSchema.safeParse(stepOneData);
     if (!result.success) {
-      const firstError = result.error.errors[0];
       toast({
         variant: "destructive",
-        title: "Validation Error",
-        description: firstError.message,
+        title: "Please fix the following",
+        description: result.error.errors[0].message,
       });
       return;
     }
@@ -75,17 +73,14 @@ const StoryRegistrationForm = () => {
   const handleSubmit = async () => {
     const result = stepTwoSchema.safeParse(stepTwoData);
     if (!result.success) {
-      const firstError = result.error.errors[0];
       toast({
         variant: "destructive",
-        title: "Validation Error",
-        description: firstError.message,
+        title: "Please fix the following",
+        description: result.error.errors[0].message,
       });
       return;
     }
-
     setIsSubmitting(true);
-    // Simulate submission delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setIsSubmitting(false);
     setIsSuccess(true);
@@ -96,23 +91,31 @@ const StoryRegistrationForm = () => {
   }
 
   return (
-    <div className="min-h-screen gradient-primary flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <div className="w-full max-w-xl">
+    <div className="min-h-screen bg-premium-gradient flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-lg">
         {/* Header */}
-        <div className="text-center mb-8 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold font-display text-primary-foreground mb-2">
+        <div className="text-center mb-8 opacity-0 animate-fade-up">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-secondary/20 mb-4 animate-float">
+            <BookOpen className="w-7 h-7 text-secondary" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary-foreground tracking-tight">
             Story Registration
           </h1>
-          <p className="text-primary-foreground/70 text-sm sm:text-base">
-            Register your story in just two simple steps
+          <p className="text-primary-foreground/50 text-sm mt-1.5">
+            Two simple steps to register your story
           </p>
         </div>
 
         {/* Progress Bar */}
-        <ProgressBar currentStep={currentStep} totalSteps={2} />
+        <div className="opacity-0 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+          <ProgressBar currentStep={currentStep} totalSteps={2} />
+        </div>
 
         {/* Form Card */}
-        <div className="bg-card rounded-lg shadow-2xl shadow-black/20 overflow-hidden">
+        <div
+          className="glass-card rounded-2xl opacity-0 animate-fade-up"
+          style={{ animationDelay: "0.15s" }}
+        >
           <div className="p-6 sm:p-8">
             {currentStep === 1 && (
               <StepOne
@@ -136,6 +139,11 @@ const StoryRegistrationForm = () => {
             )}
           </div>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-primary-foreground/30 text-xs mt-6">
+          Your information is safe and secure
+        </p>
       </div>
     </div>
   );
