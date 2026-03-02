@@ -69,7 +69,7 @@ const SuccessScreen = () => {
             onClick={() => window.location.reload()}
             className="btn-premium">
 
-            ​Open Our website  
+            Visit Story Seed Studio        
           </button>
         </div>
       </div>
