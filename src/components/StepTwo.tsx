@@ -1,4 +1,4 @@
-import { Upload, FileVideo, Loader2 } from "lucide-react";
+import { Upload, FileVideo, Loader2, CheckCircle2, AlertCircle, CloudUpload } from "lucide-react";
 import type { StepTwoData } from "./StoryRegistrationForm";
 import FloatingInput from "./FloatingInput";
 import FloatingSelect from "./FloatingSelect";
@@ -12,6 +12,8 @@ interface StepTwoProps {
   onBack: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  uploadProgress: number;         // 0–100
+  uploadStatus: "idle" | "uploading" | "done" | "error";
   direction: "forward" | "backward";
 }
 
@@ -44,6 +46,8 @@ const StepTwo = ({
   onBack,
   onSubmit,
   isSubmitting,
+  uploadProgress,
+  uploadStatus,
   direction,
 }: StepTwoProps) => {
   const { toast } = useToast();
@@ -68,6 +72,10 @@ const StepTwo = ({
     }
     onVideoChange(file);
   };
+
+  const isUploadDone = uploadStatus === "done";
+  const isUploading = uploadStatus === "uploading";
+  const isUploadError = uploadStatus === "error";
 
   return (
     <div className={direction === "forward" ? "animate-slide-left" : "animate-slide-right"}>
@@ -106,15 +114,29 @@ const StepTwo = ({
 
         {/* Video upload */}
         <div className="opacity-0 animate-fade-up stagger-3">
-          <label className="block cursor-pointer group">
+          <label className={`block cursor-pointer group ${isUploading ? "pointer-events-none" : ""}`}>
             <div
               className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300
-                ${videoFile ? "border-success bg-success/5" : "border-border hover:border-accent hover:bg-accent/5"}`}
+                ${isUploadDone
+                  ? "border-success bg-success/5"
+                  : isUploadError
+                    ? "border-destructive/50 bg-destructive/5"
+                    : videoFile
+                      ? "border-accent/60 bg-accent/5"
+                      : "border-border hover:border-accent hover:bg-accent/5"
+                }`}
             >
               {videoFile ? (
                 <div className="flex items-center justify-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                    <FileVideo className="w-5 h-5 text-success" />
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center
+                    ${isUploadDone ? "bg-success/10" : isUploadError ? "bg-destructive/10" : "bg-accent/10"}`}>
+                    {isUploadDone ? (
+                      <CheckCircle2 className="w-5 h-5 text-success" />
+                    ) : isUploadError ? (
+                      <AlertCircle className="w-5 h-5 text-destructive" />
+                    ) : (
+                      <CloudUpload className="w-5 h-5 text-accent" />
+                    )}
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-medium text-foreground truncate max-w-[220px]">
@@ -122,6 +144,9 @@ const StepTwo = ({
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {(videoFile.size / (1024 * 1024)).toFixed(1)} MB
+                      {isUploadDone && " · Uploaded ✓"}
+                      {isUploadError && " · Failed — click to retry"}
+                      {isUploading && " · Uploading…"}
                     </p>
                   </div>
                 </div>
@@ -143,6 +168,48 @@ const StepTwo = ({
               className="hidden"
             />
           </label>
+
+          {/* ── Upload Progress Bar ── */}
+          {videoFile && uploadStatus !== "idle" && (
+            <div className="mt-3 space-y-1.5">
+              {/* Label row */}
+              <div className="flex items-center justify-between text-xs px-0.5">
+                <span className={`font-medium transition-colors duration-300
+                  ${isUploadDone ? "text-success" : isUploadError ? "text-destructive" : "text-accent"}`}>
+                  {isUploadDone
+                    ? "✓ Video saved to Drive"
+                    : isUploadError
+                      ? "Upload failed"
+                      : `Uploading to Drive…`}
+                </span>
+                <span className={`tabular-nums font-semibold
+                  ${isUploadDone ? "text-success" : isUploadError ? "text-destructive" : "text-muted-foreground"}`}>
+                  {isUploadDone ? "100%" : isUploadError ? "" : `${uploadProgress}%`}
+                </span>
+              </div>
+
+              {/* Progress track */}
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ease-out
+                    ${isUploadDone
+                      ? "bg-success"
+                      : isUploadError
+                        ? "bg-destructive"
+                        : "bg-gradient-to-r from-accent via-secondary to-accent bg-[length:200%_100%] animate-shimmer"
+                    }`}
+                  style={{ width: `${isUploadDone ? 100 : uploadProgress}%` }}
+                />
+              </div>
+
+              {/* Uploading tip */}
+              {isUploading && (
+                <p className="text-[11px] text-muted-foreground px-0.5">
+                  Please keep this page open while your video uploads…
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -150,25 +217,49 @@ const StepTwo = ({
       <div className="flex gap-3 mt-8 opacity-0 animate-fade-up stagger-4">
         <button
           onClick={onBack}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUploading}
           className="btn-secondary-soft flex-1"
         >
           ← Back
         </button>
-        <button
-          onClick={onSubmit}
-          disabled={isSubmitting}
-          className="btn-premium flex-1 flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Registration"
-          )}
-        </button>
+
+        {/* Submit button: only show when upload is done */}
+        {isUploadDone && (
+          <button
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className="btn-premium flex-1 flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Submitting…
+              </>
+            ) : (
+              "Submit Registration"
+            )}
+          </button>
+        )}
+
+        {/* Placeholder (greyed out) while uploading or no video */}
+        {!isUploadDone && !isUploading && (
+          <button
+            disabled
+            className="btn-premium flex-1 flex items-center justify-center gap-2 opacity-40 cursor-not-allowed"
+          >
+            Submit Registration
+          </button>
+        )}
+
+        {isUploading && (
+          <button
+            disabled
+            className="btn-premium flex-1 flex items-center justify-center gap-2 opacity-60 cursor-not-allowed"
+          >
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Uploading…
+          </button>
+        )}
       </div>
     </div>
   );

@@ -103,6 +103,10 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-6px)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "200% center" },
+          "100%": { backgroundPosition: "-200% center" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -113,6 +117,7 @@ export default {
         "slide-right": "slide-right 0.45s ease-out forwards",
         "scale-up": "scale-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "float": "float 3s ease-in-out infinite",
+        "shimmer": "shimmer 1.8s linear infinite",
       },
     },
   },

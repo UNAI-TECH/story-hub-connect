@@ -5,10 +5,14 @@
 //
 // SETUP:
 //  1. Replace SPREADSHEET_ID and DRIVE_FOLDER_ID below.
-//  2. Deploy → New Deployment → Web App
-//     - Execute as: Me
-//     - Who has access: Anyone
-//  3. Copy Web App URL → paste into .env as VITE_GOOGLE_SCRIPT_URL
+//  2. In appsscript.json add these oauthScopes:
+//       "https://www.googleapis.com/auth/spreadsheets",
+//       "https://www.googleapis.com/auth/drive",
+//       "https://www.googleapis.com/auth/script.external_request"
+//  3. Run any function once to trigger authorization.
+//  4. Deploy → New Deployment → Web App
+//     - Execute as: Me  |  Who has access: Anyone
+//  5. Copy Web App URL → paste into .env as VITE_GOOGLE_SCRIPT_URL
 // ============================================================
 
 var SPREADSHEET_ID  = "YOUR_SPREADSHEET_ID_HERE";
@@ -31,21 +35,23 @@ var HEADERS = [
 ];
 
 // ============================================================
-// doPost — handles two actions:
+// doPost — three actions:
 //
-//   action: "submitForm"   → saves text data row, returns submissionId
-//   action: "uploadVideo"  → uploads video, updates the saved row
+//  "initUpload"   → creates Drive resumable upload session,
+//                   returns sessionId (cached for 6 hours)
+//  "uploadChunk"  → proxies one base64 chunk to Drive,
+//                   returns { status: "incomplete"|"complete", fileId? }
+//  "submitForm"   → sets sharing on uploaded file,
+//                   saves complete row to Google Sheets
 // ============================================================
 function doPost(e) {
   try {
     var payload = JSON.parse(e.postData.contents);
     var action  = payload.action || "submitForm";
 
-    if (action === "submitForm") {
-      return handleFormSubmit(payload);
-    } else if (action === "uploadVideo") {
-      return handleVideoUpload(payload);
-    }
+    if (action === "initUpload")   return handleInitUpload(payload);
+    if (action === "uploadChunk")  return handleUploadChunk(payload);
+    if (action === "submitForm")   return handleFormSubmit(payload);
 
     throw new Error("Unknown action: " + action);
 
@@ -54,10 +60,114 @@ function doPost(e) {
   }
 }
 
-// ---- Phase 1: save the form text row immediately ----
-function handleFormSubmit(payload) {
-  var sheet = getOrCreateSheet();
+// ── Step 1: create Drive resumable upload session ─────────────
+function handleInitUpload(payload) {
+  var token    = ScriptApp.getOAuthToken();
+  var fileName = payload.videoName || "video.mp4";
+  var fileSize = payload.fileSize  || 0;
 
+  var metadata = JSON.stringify({
+    name:    fileName,
+    parents: [DRIVE_FOLDER_ID],
+  });
+
+  var response = UrlFetchApp.fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
+    {
+      method:             "POST",
+      headers:            {
+        "Authorization":          "Bearer " + token,
+        "Content-Type":           "application/json; charset=UTF-8",
+        "X-Upload-Content-Type":  "video/mp4",
+        "X-Upload-Content-Length": String(fileSize),
+      },
+      payload:            metadata,
+      muteHttpExceptions: true,
+    }
+  );
+
+  if (response.getResponseCode() !== 200) {
+    throw new Error("initUpload failed (HTTP " + response.getResponseCode() + "): " + response.getContentText());
+  }
+
+  var uploadUrl = response.getHeaders()["Location"];
+  if (!uploadUrl) throw new Error("No upload URL returned from Drive API");
+
+  // Cache the upload URL keyed by a unique session ID (stored for 6 hours)
+  var sessionId = Utilities.getUuid();
+  CacheService.getScriptCache().put(sessionId, uploadUrl, 21600);
+
+  return jsonResponse({ success: true, sessionId: sessionId });
+}
+
+// ── Step 2: proxy one chunk of the video to Google Drive ──────
+// Frontend sends base64-encoded chunk + byte range.
+// Apps Script decodes and forwards to Drive via UrlFetchApp (no CORS issues).
+function handleUploadChunk(payload) {
+  var sessionId   = payload.sessionId;
+  var chunkBase64 = payload.chunkBase64;
+  var start       = parseInt(payload.start, 10);
+  var end         = parseInt(payload.end,   10); // inclusive
+  var total       = parseInt(payload.total, 10);
+
+  var uploadUrl = CacheService.getScriptCache().get(sessionId);
+  if (!uploadUrl) throw new Error("Upload session not found or expired. Please retry.");
+
+  var chunkBytes = Utilities.base64Decode(chunkBase64);
+
+  var response = UrlFetchApp.fetch(uploadUrl, {
+    method:             "PUT",
+    headers:            {
+      "Content-Range": "bytes " + start + "-" + end + "/" + total,
+      "Content-Type":  "video/mp4",
+    },
+    payload:            chunkBytes,
+    muteHttpExceptions: true,
+  });
+
+  var code = response.getResponseCode();
+
+  if (code === 308) {
+    // Drive wants more chunks
+    return jsonResponse({ success: true, status: "incomplete" });
+  }
+
+  if (code === 200 || code === 201) {
+    // All chunks received — Drive returns file metadata
+    var fileData = JSON.parse(response.getContentText());
+    return jsonResponse({ success: true, status: "complete", fileId: fileData.id });
+  }
+
+  throw new Error("Chunk upload failed (HTTP " + code + "): " + response.getContentText());
+}
+
+// ── Step 3: set sharing + save complete form row ──────────────
+function handleFormSubmit(payload) {
+  var driveLink = "";
+  var videoName = payload.videoName || "";
+
+  if (payload.fileId) {
+    var fileId = payload.fileId;
+    var token  = ScriptApp.getOAuthToken();
+
+    // Make file viewable by anyone with the link
+    UrlFetchApp.fetch(
+      "https://www.googleapis.com/drive/v3/files/" + fileId + "/permissions",
+      {
+        method:             "POST",
+        headers:            {
+          "Authorization": "Bearer " + token,
+          "Content-Type":  "application/json",
+        },
+        payload:            JSON.stringify({ role: "reader", type: "anyone" }),
+        muteHttpExceptions: true,
+      }
+    );
+
+    driveLink = "https://drive.google.com/file/d/" + fileId + "/view";
+  }
+
+  var sheet = getOrCreateSheet();
   sheet.appendRow([
     new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
     payload.name          || "",
@@ -70,54 +180,25 @@ function handleFormSubmit(payload) {
     payload.storyTitle    || "",
     payload.storyCategory || "",
     payload.classLevel    || "",
-    "",   // Video File Name — filled in by uploadVideo
-    "",   // Video Drive Link — filled in by uploadVideo
+    videoName,
+    driveLink,
   ]);
 
-  // Return last row index so the frontend can reference this row later
-  var submissionId = sheet.getLastRow();
-  return jsonResponse({ success: true, submissionId: submissionId });
+  return jsonResponse({ success: true });
 }
 
-// ---- Phase 2: upload video and update the matching row ----
-function handleVideoUpload(payload) {
-  var submissionId = parseInt(payload.submissionId, 10);
-  if (!submissionId || isNaN(submissionId)) {
-    throw new Error("Invalid submissionId");
-  }
-  if (!payload.videoBase64 || !payload.videoName) {
-    throw new Error("Missing video data");
-  }
-
-  // Upload to Drive
-  var folder   = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  var decoded  = Utilities.base64Decode(payload.videoBase64);
-  var blob     = Utilities.newBlob(decoded, "video/mp4", payload.videoName);
-  var file     = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  var driveLink = file.getUrl();
-
-  // Update the existing row (columns 12 = Video Name, 13 = Drive Link)
-  var sheet = getOrCreateSheet();
-  sheet.getRange(submissionId, 12).setValue(payload.videoName);
-  sheet.getRange(submissionId, 13).setValue(driveLink);
-
-  return jsonResponse({ success: true, driveLink: driveLink });
-}
-
-// ---- Health check ----
+// ── Health check ──────────────────────────────────────────────
 function doGet(e) {
   return jsonResponse({ status: "Story Seeds Script is live!" });
 }
 
-// ---- Utility: JSON response helper ----
+// ── Helpers ───────────────────────────────────────────────────
 function jsonResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ---- Sheet setup ----
 function getOrCreateSheet() {
   var ss        = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheetName = "Registrations";

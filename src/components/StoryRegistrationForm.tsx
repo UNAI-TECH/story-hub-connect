@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import ProgressBar from "@/components/ProgressBar";
@@ -27,8 +27,10 @@ export const stepTwoSchema = z.object({
 export type StepOneData = z.infer<typeof stepOneSchema>;
 export type StepTwoData = z.infer<typeof stepTwoSchema>;
 
-// sessionStorage key used to detect reloads after submission
 const SUBMIT_KEY = "storySeedsSubmitted";
+
+// 5 MB per chunk (must be multiple of 256 KB: 5×1024×1024 = 20×256 KB ✓)
+const CHUNK_SIZE = 5 * 1024 * 1024;
 
 // ─── Component ────────────────────────────────────────────────
 const StoryRegistrationForm = () => {
@@ -38,54 +40,42 @@ const StoryRegistrationForm = () => {
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [showResubmitDialog, setShowResubmitDialog] = useState(false);
+
+  // ── Video upload state ────────────────────────────────────
+  const [uploadProgress, setUploadProgress] = useState(0);   // 0–100
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
+  const [uploadedFileId, setUploadedFileId] = useState("");
+  const [uploadedVideoName, setUploadedVideoName] = useState("");
+  const abortRef = useRef(false);
+
   const { toast } = useToast();
 
   const [stepOneData, setStepOneData] = useState<StepOneData>({
-    name: "",
-    standard: "",
-    section: "",
-    schoolName: "",
-    parentName: "",
-    email: "",
-    mobile: "",
+    name: "", standard: "", section: "",
+    schoolName: "", parentName: "", email: "", mobile: "",
   });
-
   const [stepTwoData, setStepTwoData] = useState<StepTwoData>({
-    storyTitle: "",
-    storyCategory: "",
-    classLevel: "",
+    storyTitle: "", storyCategory: "", classLevel: "",
   });
 
-  // ── On mount: show resubmit dialog if user reloaded after submitting ──
   useEffect(() => {
-    if (sessionStorage.getItem(SUBMIT_KEY) === "true") {
-      setShowResubmitDialog(true);
-    }
+    if (sessionStorage.getItem(SUBMIT_KEY) === "true") setShowResubmitDialog(true);
   }, []);
 
-  // ── Resubmit dialog handlers ──────────────────────────────────
   const handleResubmitConfirm = () => {
-    // Clear the flag and let the user refill + resubmit
     sessionStorage.removeItem(SUBMIT_KEY);
     setShowResubmitDialog(false);
   };
-
   const handleResubmitCancel = () => {
-    // Go straight to success screen (treat reload as "already submitted")
     sessionStorage.removeItem(SUBMIT_KEY);
     setShowResubmitDialog(false);
     setIsSuccess(true);
   };
 
-  // ── Step navigation ───────────────────────────────────────────
   const handleStepOneNext = () => {
     const result = stepOneSchema.safeParse(stepOneData);
     if (!result.success) {
-      toast({
-        variant: "destructive",
-        title: "Please fix the following",
-        description: result.error.errors[0].message,
-      });
+      toast({ variant: "destructive", title: "Please fix the following", description: result.error.errors[0].message });
       return;
     }
     setDirection("forward");
@@ -97,111 +87,167 @@ const StoryRegistrationForm = () => {
     setCurrentStep(1);
   };
 
-  // ── Two-phase submission ──────────────────────────────────────
-  const handleSubmit = async () => {
-    const result = stepTwoSchema.safeParse(stepTwoData);
-    if (!result.success) {
-      toast({
-        variant: "destructive",
-        title: "Please fix the following",
-        description: result.error.errors[0].message,
+  // ── Converts a slice of a File into a base64 string ──────────
+  const sliceToBase64 = (file: File, start: number, end: number): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const slice = file.slice(start, end);
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(slice);
+    });
+
+  // ── Upload video in 5 MB chunks via Apps Script proxy ────────
+  const uploadVideoChunked = async (
+    scriptUrl: string,
+    file: File
+  ): Promise<string> => {
+    const total = file.size;
+
+    // Step 1: init upload session
+    const initRes = await fetch(scriptUrl, {
+      method: "POST",
+      body: JSON.stringify({ action: "initUpload", videoName: file.name, fileSize: total }),
+    });
+    const initJson = await initRes.json();
+    if (!initJson.success || !initJson.sessionId) {
+      throw new Error(initJson.error || "Could not start upload");
+    }
+    const sessionId = initJson.sessionId;
+
+    // Step 2: send chunks one by one
+    let fileId = "";
+    let offset = 0;
+    let chunkIndex = 0;
+    const totalChunks = Math.ceil(total / CHUNK_SIZE);
+
+    while (offset < total) {
+      if (abortRef.current) throw new Error("Upload cancelled");
+
+      const end = Math.min(offset + CHUNK_SIZE, total);
+      const chunkBase64 = await sliceToBase64(file, offset, end);
+
+      const chunkRes = await fetch(scriptUrl, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "uploadChunk",
+          sessionId,
+          chunkBase64,
+          start: offset,
+          end: end - 1,  // inclusive byte range
+          total,
+        }),
       });
+      const chunkJson = await chunkRes.json();
+      if (!chunkJson.success) throw new Error(chunkJson.error || "Chunk upload failed");
+
+      chunkIndex++;
+      const pct = Math.round((chunkIndex / totalChunks) * 100);
+      setUploadProgress(Math.min(pct, 99)); // hold at 99 until final confirm
+
+      if (chunkJson.status === "complete") {
+        fileId = chunkJson.fileId;
+        break;
+      }
+
+      offset = end;
+    }
+
+    return fileId;
+  };
+
+  // ── Auto-upload when a video file is selected ─────────────
+  const handleVideoChange = async (file: File | null) => {
+    // Reset prior upload state
+    setVideoFile(file);
+    setUploadProgress(0);
+    setUploadedFileId("");
+    setUploadedVideoName("");
+    abortRef.current = false;
+
+    if (!file) {
+      setUploadStatus("idle");
       return;
     }
 
     const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
     if (!scriptUrl || scriptUrl === "YOUR_WEB_APP_URL_HERE") {
+      toast({ variant: "destructive", title: "Configuration Error", description: "Google Script URL not set in .env" });
+      return;
+    }
+
+    setUploadStatus("uploading");
+    setUploadProgress(0);
+
+    try {
+      const fileId = await uploadVideoChunked(scriptUrl, file);
+      setUploadProgress(100);
+      setUploadedFileId(fileId);
+      setUploadedVideoName(file.name);
+      setUploadStatus("done");
+    } catch (err: any) {
+      if (abortRef.current) return;
+      setUploadStatus("error");
+      setUploadProgress(0);
       toast({
         variant: "destructive",
-        title: "Configuration Error",
-        description: "Google Script URL not set in .env",
+        title: "Video Upload Failed",
+        description: err.message || "Could not upload video. Please try again.",
       });
+    }
+  };
+
+  // ── Main submit handler (video already in Drive) ───────────
+  const handleSubmit = async () => {
+    const result = stepTwoSchema.safeParse(stepTwoData);
+    if (!result.success) {
+      toast({ variant: "destructive", title: "Please fix the following", description: result.error.errors[0].message });
+      return;
+    }
+
+    const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+    if (!scriptUrl || scriptUrl === "YOUR_WEB_APP_URL_HERE") {
+      toast({ variant: "destructive", title: "Configuration Error", description: "Google Script URL not set in .env" });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // ── Phase 1: submit text data immediately (fast) ──────────
-      const textPayload = {
-        action: "submitForm",
-        ...stepOneData,
-        ...stepTwoData,
-      };
-
-      const textRes = await fetch(scriptUrl, {
+      // Save form data + video info to Sheets (video already uploaded)
+      const formRes = await fetch(scriptUrl, {
         method: "POST",
-        body: JSON.stringify(textPayload),
+        body: JSON.stringify({
+          action: "submitForm",
+          ...stepOneData,
+          ...stepTwoData,
+          fileId: uploadedFileId,
+          videoName: uploadedVideoName,
+        }),
       });
-      const textJson = await textRes.json();
+      const formJson = await formRes.json();
+      if (!formJson.success) throw new Error(formJson.error || "Form submission failed");
 
-      if (!textJson.success) {
-        throw new Error(textJson.error || "Form submission failed");
-      }
-
-      const submissionId: number = textJson.submissionId;
-
-      // ── Mark as submitted BEFORE showing success (for reload detection) ──
       sessionStorage.setItem(SUBMIT_KEY, "true");
-      setIsSubmitting(false);
       setIsSuccess(true);
 
-      // ── Phase 2: upload video in the background (non-blocking) ──
-      if (videoFile && submissionId) {
-        uploadVideoInBackground(scriptUrl, videoFile, submissionId);
-      }
     } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Submission Failed",
         description: err.message || "Something went wrong. Please try again.",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ── Background video upload (fire-and-forget) ─────────────────
-  const uploadVideoInBackground = async (
-    scriptUrl: string,
-    file: File,
-    submissionId: number
-  ) => {
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () =>
-          resolve((reader.result as string).split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      await fetch(scriptUrl, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "uploadVideo",
-          submissionId,
-          videoBase64: base64,
-          videoName: file.name,
-        }),
-      });
-    } catch {
-      // Background upload failure is silent — data row is already saved
-    }
-  };
-
-  // ─── Render ──────────────────────────────────────────────────
-  if (isSuccess) {
-    return <SuccessScreen />;
-  }
+  if (isSuccess) return <SuccessScreen />;
 
   return (
     <>
-      {/* Resubmit dialog (shown on reload after successful submission) */}
       {showResubmitDialog && (
-        <ResubmitDialog
-          onConfirm={handleResubmitConfirm}
-          onCancel={handleResubmitCancel}
-        />
+        <ResubmitDialog onConfirm={handleResubmitConfirm} onCancel={handleResubmitCancel} />
       )}
 
       <div className="min-h-screen bg-premium-gradient flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -229,28 +275,22 @@ const StoryRegistrationForm = () => {
           </div>
 
           {/* Form Card */}
-          <div
-            className="glass-card rounded-2xl opacity-0 animate-fade-up"
-            style={{ animationDelay: "0.15s" }}
-          >
+          <div className="glass-card rounded-2xl opacity-0 animate-fade-up" style={{ animationDelay: "0.15s" }}>
             <div className="p-6 sm:p-8">
               {currentStep === 1 && (
-                <StepOne
-                  data={stepOneData}
-                  onChange={setStepOneData}
-                  onNext={handleStepOneNext}
-                  direction={direction}
-                />
+                <StepOne data={stepOneData} onChange={setStepOneData} onNext={handleStepOneNext} direction={direction} />
               )}
               {currentStep === 2 && (
                 <StepTwo
                   data={stepTwoData}
                   onChange={setStepTwoData}
                   videoFile={videoFile}
-                  onVideoChange={setVideoFile}
+                  onVideoChange={handleVideoChange}
                   onBack={handleBack}
                   onSubmit={handleSubmit}
                   isSubmitting={isSubmitting}
+                  uploadProgress={uploadProgress}
+                  uploadStatus={uploadStatus}
                   direction={direction}
                 />
               )}
