@@ -66,7 +66,7 @@ const SuccessScreen = () => {
 
         <div className="opacity-0 animate-fade-up mt-10" style={{ animationDelay: "1.2s" }}>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => window.open("https://storyseed.in/", "_blank")}
             className="btn-premium">
 
             Visit Story Seed Studio        
