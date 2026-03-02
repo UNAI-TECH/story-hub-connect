@@ -18,14 +18,14 @@ const SuccessScreen = () => {
         angle: 60,
         spread: 55,
         origin: { x: 0, y: 0.7 },
-        colors: ["#9e1a1a", "#ffc105", "#ffffff", "#2ecc71"]
+        colors: ["#9e1a1a", "#ffc105", "#ffffff", "#2ecc71"],
       });
       confetti({
         particleCount: 3,
         angle: 120,
         spread: 55,
         origin: { x: 1, y: 0.7 },
-        colors: ["#9e1a1a", "#ffc105", "#ffffff", "#2ecc71"]
+        colors: ["#9e1a1a", "#ffc105", "#ffffff", "#2ecc71"],
       });
 
       if (Date.now() < end) {
@@ -38,7 +38,7 @@ const SuccessScreen = () => {
       particleCount: 80,
       spread: 100,
       origin: { y: 0.6 },
-      colors: ["#9e1a1a", "#ffc105", "#ffffff", "#2ecc71"]
+      colors: ["#9e1a1a", "#ffc105", "#ffffff", "#2ecc71"],
     });
 
     frame();
@@ -65,16 +65,16 @@ const SuccessScreen = () => {
         </div>
 
         <div className="opacity-0 animate-fade-up mt-10" style={{ animationDelay: "1.2s" }}>
-          
-
-
-
-
-
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-premium"
+          >
+            Submit Another Registration
+          </button>
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 };
 
 export default SuccessScreen;
