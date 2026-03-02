@@ -5,7 +5,7 @@ import ProgressBar from "@/components/ProgressBar";
 import StepOne from "@/components/StepOne";
 import StepTwo from "@/components/StepTwo";
 import SuccessScreen from "@/components/SuccessScreen";
-import { BookOpen } from "lucide-react";
+
 
 // Validation schemas
 export const stepOneSchema = z.object({
@@ -80,10 +80,60 @@ const StoryRegistrationForm = () => {
       });
       return;
     }
+
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    setIsSuccess(true);
+
+    try {
+      // Convert video file to base64 if present
+      let videoBase64 = "";
+      let videoName = "";
+      if (videoFile) {
+        videoName = videoFile.name;
+        videoBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            // Strip the data URI prefix, keep only base64 content
+            const base64 = (reader.result as string).split(",")[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(videoFile);
+        });
+      }
+
+      const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+      if (!scriptUrl || scriptUrl === "YOUR_WEB_APP_URL_HERE") {
+        throw new Error("Google Script URL not configured in .env");
+      }
+
+      const payload = {
+        ...stepOneData,
+        ...stepTwoData,
+        videoBase64,
+        videoName,
+      };
+
+      const response = await fetch(scriptUrl, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      const json = await response.json();
+
+      if (!json.success) {
+        throw new Error(json.error || "Submission failed");
+      }
+
+      setIsSuccess(true);
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: err.message || "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSuccess) {
@@ -91,12 +141,16 @@ const StoryRegistrationForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-premium-gradient flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen bg-premium-gradient flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8 opacity-0 animate-fade-up">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-secondary/20 mb-4 animate-float">
-            <BookOpen className="w-7 h-7 text-secondary" />
+          <div className="flex items-center justify-center mb-4">
+            <img
+              src="/Untitled design (3).png"
+              alt="Story Seed Studio Logo"
+              className="w-80 h-30 object-contain drop-shadow-lg"
+            />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-primary-foreground tracking-tight">
             Story Registration
