@@ -1,14 +1,17 @@
 import { useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 
-const SuccessScreen = () => {
+interface SuccessScreenProps {
+  promoApplied?: boolean;
+}
+
+const SuccessScreen = ({ promoApplied }: SuccessScreenProps) => {
   const fired = useRef(false);
 
   useEffect(() => {
     if (fired.current) return;
     fired.current = true;
 
-    // Fire confetti from both sides
     const duration = 2500;
     const end = Date.now() + duration;
 
@@ -33,7 +36,6 @@ const SuccessScreen = () => {
       }
     };
 
-    // Big initial burst
     confetti({
       particleCount: 80,
       spread: 100,
@@ -46,7 +48,7 @@ const SuccessScreen = () => {
 
   return (
     <div className="min-h-screen bg-premium-gradient flex items-center justify-center p-4">
-      <div className="text-center">
+      <div className="text-center max-w-md">
         {/* Animated SVG Checkmark */}
         <div className="animate-scale-up mb-8 flex justify-center">
           <svg className="success-checkmark" viewBox="0 0 52 52">
@@ -57,24 +59,35 @@ const SuccessScreen = () => {
 
         <div className="opacity-0 animate-fade-up" style={{ animationDelay: "0.8s" }}>
           <h2 className="text-2xl sm:text-3xl font-bold text-primary-foreground mb-3">
-            Registration Successful!
+            Registration Confirmed! 🎉
           </h2>
-          <p className="text-primary-foreground/70 text-sm sm:text-base max-w-sm mx-auto leading-relaxed">
-            Your Registration Has Been Successfully Submitted!
+          <p className="text-primary-foreground/70 text-sm sm:text-base leading-relaxed mb-2">
+            Welcome to <strong className="text-yellow-300">Future Forge 2026</strong> by Story Seed Studio!
           </p>
+          <p className="text-primary-foreground/60 text-sm leading-relaxed">
+            {promoApplied
+              ? "Your discounted registration has been submitted. We'll get in touch with you soon!"
+              : "Your registration has been successfully submitted. We'll get in touch with you soon!"}
+          </p>
+
+          {promoApplied && (
+            <div className="mt-4 inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/40 rounded-full px-4 py-1.5">
+              <span className="text-xs font-bold text-yellow-300">✦ Promo Discount Applied</span>
+            </div>
+          )}
         </div>
 
         <div className="opacity-0 animate-fade-up mt-10" style={{ animationDelay: "1.2s" }}>
           <button
             onClick={() => window.open("https://storyseed.in/", "_blank")}
-            className="btn-premium">
-
-            Visit Story Seed Studio        
+            className="btn-premium"
+          >
+            Visit Story Seed Studio
           </button>
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 };
 
 export default SuccessScreen;

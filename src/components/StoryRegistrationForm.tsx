@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import ProgressBar from "@/components/ProgressBar";
@@ -9,28 +9,20 @@ import ResubmitDialog from "@/components/ResubmitDialog";
 
 // ─── Validation schemas ───────────────────────────────────────
 export const stepOneSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
-  standard: z.string().optional(),
+  name: z.string().trim().min(1, "Student name is required").max(100),
+  standard: z.string().min(1, "Please select a standard"),
   section: z.string().max(50).optional(),
   schoolName: z.string().trim().min(1, "School name is required").max(200),
   parentName: z.string().trim().min(1, "Parent's name is required").max(100),
   email: z.string().trim().email("Please enter a valid email address").max(255),
   mobile: z.string().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
-});
-
-export const stepTwoSchema = z.object({
-  storyTitle: z.string().trim().min(1, "Story title is required").max(200),
-  storyCategory: z.string().optional(),
-  classLevel: z.string().optional(),
+  address: z.string().trim().min(1, "Address is required").max(300),
+  promoCode: z.string().optional(),
 });
 
 export type StepOneData = z.infer<typeof stepOneSchema>;
-export type StepTwoData = z.infer<typeof stepTwoSchema>;
 
-const SUBMIT_KEY = "storySeedsSubmitted";
-
-// 5 MB per chunk (must be multiple of 256 KB: 5×1024×1024 = 20×256 KB ✓)
-const CHUNK_SIZE = 5 * 1024 * 1024;
+const SUBMIT_KEY = "futureForgeSubmitted";
 
 // ─── Component ────────────────────────────────────────────────
 const StoryRegistrationForm = () => {
@@ -38,24 +30,15 @@ const StoryRegistrationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [showResubmitDialog, setShowResubmitDialog] = useState(false);
-
-  // ── Video upload state ────────────────────────────────────
-  const [uploadProgress, setUploadProgress] = useState(0);   // 0–100
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
-  const [uploadedFileId, setUploadedFileId] = useState("");
-  const [uploadedVideoName, setUploadedVideoName] = useState("");
-  const abortRef = useRef(false);
+  const [promoApplied, setPromoApplied] = useState(false);
 
   const { toast } = useToast();
 
   const [stepOneData, setStepOneData] = useState<StepOneData>({
     name: "", standard: "", section: "",
     schoolName: "", parentName: "", email: "", mobile: "",
-  });
-  const [stepTwoData, setStepTwoData] = useState<StepTwoData>({
-    storyTitle: "", storyCategory: "", classLevel: "",
+    address: "", promoCode: "",
   });
 
   useEffect(() => {
@@ -78,6 +61,17 @@ const StoryRegistrationForm = () => {
       toast({ variant: "destructive", title: "Please fix the following", description: result.error.errors[0].message });
       return;
     }
+
+    // Check promo code
+    const code = (stepOneData.promoCode || "").trim().toUpperCase();
+    const valid = code === "VEDAGIRI26";
+    setPromoApplied(valid);
+
+    if (code && !valid) {
+      toast({ variant: "destructive", title: "Invalid Promo Code", description: "The promo code you entered is not valid." });
+      return;
+    }
+
     setDirection("forward");
     setCurrentStep(2);
   };
@@ -87,162 +81,44 @@ const StoryRegistrationForm = () => {
     setCurrentStep(1);
   };
 
-  // ── Converts a slice of a File into a base64 string ──────────
-  const sliceToBase64 = (file: File, start: number, end: number): Promise<string> =>
+  // Convert screenshot file to base64
+  const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
-      const slice = file.slice(start, end);
       const reader = new FileReader();
       reader.onload = () => resolve((reader.result as string).split(",")[1]);
       reader.onerror = reject;
-      reader.readAsDataURL(slice);
+      reader.readAsDataURL(file);
     });
 
-  // ── Upload video in 5 MB chunks via Apps Script proxy ────────
-  const uploadVideoChunked = async (
-    scriptUrl: string,
-    file: File
-  ): Promise<string> => {
-    const total = file.size;
-
-    // Step 1: init upload session
-    const initRes = await fetch(scriptUrl, {
-      method: "POST",
-      body: JSON.stringify({ action: "initUpload", videoName: file.name, fileSize: total }),
-    });
-    const initJson = await initRes.json();
-    if (!initJson.success || !initJson.sessionId) {
-      throw new Error(initJson.error || "Could not start upload");
-    }
-    const sessionId = initJson.sessionId;
-
-    // Step 2: send chunks one by one
-    let fileId = "";
-    let offset = 0;
-    let chunkIndex = 0;
-    const totalChunks = Math.ceil(total / CHUNK_SIZE);
-
-    while (offset < total) {
-      if (abortRef.current) throw new Error("Upload cancelled");
-
-      const end = Math.min(offset + CHUNK_SIZE, total);
-      const chunkBase64 = await sliceToBase64(file, offset, end);
-
-      const chunkRes = await fetch(scriptUrl, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "uploadChunk",
-          sessionId,
-          chunkBase64,
-          start: offset,
-          end: end - 1,  // inclusive byte range
-          total,
-        }),
-      });
-      const chunkJson = await chunkRes.json();
-      if (!chunkJson.success) throw new Error(chunkJson.error || "Chunk upload failed");
-
-      chunkIndex++;
-      const pct = Math.round((chunkIndex / totalChunks) * 100);
-      setUploadProgress(Math.min(pct, 99)); // hold at 99 until final confirm
-
-      if (chunkJson.status === "complete") {
-        fileId = chunkJson.fileId;
-        break;
-      }
-
-      offset = end;
-    }
-
-    return fileId;
-  };
-
-  // ── Auto-upload when a video file is selected ─────────────
-  const handleVideoChange = async (file: File | null) => {
-    // Reset prior upload state
-    setVideoFile(file);
-    setUploadProgress(0);
-    setUploadedFileId("");
-    setUploadedVideoName("");
-    abortRef.current = false;
-
-    if (!file) {
-      setUploadStatus("idle");
-      return;
-    }
-
-    const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
-    if (!scriptUrl || scriptUrl === "YOUR_WEB_APP_URL_HERE") {
-      toast({ variant: "destructive", title: "Configuration Error", description: "Google Script URL not set in .env" });
-      return;
-    }
-
-    setUploadStatus("uploading");
-    setUploadProgress(0);
-
-    try {
-      const fileId = await uploadVideoChunked(scriptUrl, file);
-      setUploadProgress(100);
-      setUploadedFileId(fileId);
-      setUploadedVideoName(file.name);
-      setUploadStatus("done");
-    } catch (err: any) {
-      if (abortRef.current) return;
-      setUploadStatus("error");
-      setUploadProgress(0);
-      toast({
-        variant: "destructive",
-        title: "Video Upload Failed",
-        description: err.message || "Could not upload video. Please try again.",
-      });
-    }
-  };
-
-  // ── Main submit handler (video already in Drive) ───────────
-  const handleSubmit = async () => {
-    const result = stepTwoSchema.safeParse(stepTwoData);
-    if (!result.success) {
-      toast({ variant: "destructive", title: "Please fix the following", description: result.error.errors[0].message });
-      return;
-    }
-
-    const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
-    if (!scriptUrl || scriptUrl === "YOUR_WEB_APP_URL_HERE") {
-      toast({ variant: "destructive", title: "Configuration Error", description: "Google Script URL not set in .env" });
-      return;
-    }
-
+  const handleSubmit = async (transactionId: string, screenshotFile: File) => {
     setIsSubmitting(true);
 
-    try {
-      // Save form data + video info to Sheets (video already uploaded)
-      const formRes = await fetch(scriptUrl, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "submitForm",
-          ...stepOneData,
-          ...stepTwoData,
-          fileId: uploadedFileId,
-          videoName: uploadedVideoName,
-        }),
-      });
-      const formJson = await formRes.json();
-      if (!formJson.success) throw new Error(formJson.error || "Form submission failed");
-
-      sessionStorage.setItem(SUBMIT_KEY, "true");
-      setIsSuccess(true);
-
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Submission Failed",
-        description: err.message || "Something went wrong. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
+    const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+    if (scriptUrl && scriptUrl !== "YOUR_WEB_APP_URL_HERE") {
+      try {
+        const screenshotBase64 = await fileToBase64(screenshotFile);
+        await fetch(scriptUrl, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "submitForm",
+            ...stepOneData,
+            promoApplied,
+            transactionId,
+            screenshotName: screenshotFile.name,
+            screenshotBase64,
+          }),
+        });
+      } catch {
+        // silent — still show success screen
+      }
     }
+
+    sessionStorage.setItem(SUBMIT_KEY, "true");
+    setIsSubmitting(false);
+    setIsSuccess(true);
   };
 
-  if (isSuccess) return <SuccessScreen />;
+  if (isSuccess) return <SuccessScreen promoApplied={promoApplied} />;
 
   return (
     <>
@@ -261,11 +137,14 @@ const StoryRegistrationForm = () => {
                 className="w-80 h-30 object-contain drop-shadow-lg"
               />
             </div>
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-3">
+              <span className="text-xs font-bold text-yellow-300 uppercase tracking-widest">🚀 Summer Boot Camp</span>
+            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-primary-foreground tracking-tight">
-              Story Registration
+              Future Forge 2026
             </h1>
-            <p className="text-primary-foreground/50 text-sm mt-1.5">
-              Two simple steps to register your story
+            <p className="text-primary-foreground/60 text-sm mt-1.5">
+              {currentStep === 1 ? "Fill in your details to register for the camp" : "Scan the QR code to complete your payment"}
             </p>
           </div>
 
@@ -282,15 +161,11 @@ const StoryRegistrationForm = () => {
               )}
               {currentStep === 2 && (
                 <StepTwo
-                  data={stepTwoData}
-                  onChange={setStepTwoData}
-                  videoFile={videoFile}
-                  onVideoChange={handleVideoChange}
+                  promoApplied={promoApplied}
+                  studentName={stepOneData.name}
                   onBack={handleBack}
-                  onSubmit={handleSubmit}
+                  onSubmit={(txnId, file) => handleSubmit(txnId, file)}
                   isSubmitting={isSubmitting}
-                  uploadProgress={uploadProgress}
-                  uploadStatus={uploadStatus}
                   direction={direction}
                 />
               )}

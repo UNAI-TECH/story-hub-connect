@@ -200,6 +200,45 @@
   .btn-secondary-soft:active {
     transform: translateY(0) scale(0.98);
   }
+
+  /* Promo code input */
+  .promo-field-wrapper {
+    @apply relative;
+  }
+
+  .promo-input {
+    @apply w-full pl-10 pr-4 py-3 text-sm rounded-xl border border-border bg-background text-foreground
+      outline-none transition-all duration-300 font-mono tracking-widest uppercase;
+  }
+
+  .promo-input::placeholder {
+    @apply font-sans tracking-normal normal-case text-muted-foreground;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .promo-input:focus {
+    border-color: hsl(44, 100%, 51%);
+    box-shadow: 0 0 0 3px hsl(44 100% 51% / 0.15);
+  }
+
+  /* Transaction ID input */
+  .txn-input {
+    @apply w-full pl-10 pr-4 py-3 text-sm rounded-xl border border-border bg-background text-foreground
+      outline-none transition-all duration-300 font-mono tracking-wider;
+  }
+
+  .txn-input::placeholder {
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: normal;
+    @apply text-muted-foreground;
+  }
+
+  .txn-input:focus {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+  }
 }
 
 /* Success checkmark animation */
@@ -274,3 +313,4 @@
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.3s; }
 .stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }

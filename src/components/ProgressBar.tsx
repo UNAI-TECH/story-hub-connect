@@ -8,8 +8,8 @@ interface ProgressBarProps {
 
 const ProgressBar = ({ currentStep, totalSteps }: ProgressBarProps) => {
   const steps = [
-    { num: 1, label: "Personal Details" },
-    { num: 2, label: "Story Details" },
+    { num: 1, label: "Student Details" },
+    { num: 2, label: "Payment QR" },
   ];
 
   // Track animation state
