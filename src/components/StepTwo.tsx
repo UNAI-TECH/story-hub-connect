@@ -128,16 +128,28 @@ const StepTwo = ({
                 </p>
                 
                 {/* Mobile Pay Button */}
-                <a
-                  href={promoApplied 
-                    ? "upi://pay?pa=8838571152@okbizaxis&pn=Storyseedsstudio&am=299&cu=INR"
-                    : "upi://pay?pa=8838571152@okbizaxis&pn=Storyseedsstudio&am=599&cu=INR"
-                  }
-                  className="sm:hidden flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 active:scale-[0.98] transition-all"
-                >
-                  <Smartphone className="w-4 h-4" />
-                  Tap to Pay via UPI App
-                </a>
+                <div className="sm:hidden mt-4 space-y-3">
+                  <a
+                    href={promoApplied 
+                      ? "upi://pay?pa=8838571152@okbizaxis&pn=Storyseedsstudio&am=299&cu=INR"
+                      : "upi://pay?pa=8838571152@okbizaxis&pn=Storyseedsstudio&am=599&cu=INR"
+                    }
+                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:scale-[0.98] transition-all shadow-md shadow-blue-600/20"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    Tap to Pay via UPI App
+                  </a>
+                  
+                  <div className="bg-blue-50/80 border border-blue-200/60 rounded-xl p-3.5 text-left flex items-start gap-2.5">
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-[11px] text-gray-700 leading-relaxed space-y-1">
+                      <p className="font-semibold text-blue-900 text-xs mb-1.5">After tapping pay:</p>
+                      <p>1. Complete payment in your UPI app</p>
+                      <p>2. <strong className="text-blue-700">Take a screenshot</strong> of the success screen</p>
+                      <p>3. <strong className="text-blue-700">Return to this browser</strong> to enter your Transaction ID and upload the screenshot</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
