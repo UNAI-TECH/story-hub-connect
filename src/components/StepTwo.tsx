@@ -71,13 +71,13 @@ const StepTwo = ({
       <div className="space-y-5">
         {/* Promo banner */}
         {promoApplied && (
-          <div className="opacity-0 animate-fade-up stagger-1 flex items-center gap-2.5 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-300 rounded-xl px-4 py-3">
-            <div className="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center flex-shrink-0">
+          <div className="opacity-0 animate-fade-up stagger-1 flex items-center gap-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-xl px-4 py-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
               <Tag className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-yellow-800">Promo Code Applied! 🎉</p>
-              <p className="text-xs text-yellow-700">You're getting a discounted registration price.</p>
+              <p className="text-sm font-semibold text-blue-800">Promo Code Applied! 🎉</p>
+              <p className="text-xs text-blue-700">You're getting a discounted registration price.</p>
             </div>
           </div>
         )}
@@ -86,14 +86,14 @@ const StepTwo = ({
         <div className="opacity-0 animate-fade-up stagger-2">
           <div className={`rounded-2xl overflow-hidden border-2 transition-all duration-300 ${
             promoApplied
-              ? "border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.25)]"
+              ? "border-blue-400 shadow-[0_0_30px_rgba(37,99,235,0.2)]"
               : "border-border shadow-lg"
           }`}>
             {/* Card header */}
             <div className={`px-6 py-4 text-center ${
               promoApplied
-                ? "bg-gradient-to-r from-yellow-400 to-amber-500"
-                : "bg-gradient-to-r from-primary to-red-800"
+                ? "bg-gradient-to-r from-blue-600 to-purple-600"
+                : "bg-gradient-to-r from-slate-800 to-blue-900"
             }`}>
               <p className="text-xs font-bold uppercase tracking-widest text-white/80 mb-0.5">
                 {promoApplied ? "✦ Discounted Price ✦" : "Standard Registration"}

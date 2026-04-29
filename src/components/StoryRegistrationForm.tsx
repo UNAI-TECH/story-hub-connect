@@ -138,7 +138,7 @@ const StoryRegistrationForm = () => {
               />
             </div>
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-3">
-              <span className="text-xs font-bold text-yellow-300 uppercase tracking-widest">🚀 Summer Boot Camp</span>
+              <span className="text-xs font-bold text-blue-300 uppercase tracking-widest">🚀 Summer Boot Camp</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-primary-foreground tracking-tight">
               Future Forge 2026

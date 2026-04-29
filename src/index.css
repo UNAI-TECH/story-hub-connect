@@ -2,37 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --background: 30 20% 97%;
-    --foreground: 0 0% 10%;
+    /* ── UNAI Tech palette ── */
+    --background: 210 40% 98%;           /* slate-50  #f8fafc */
+    --foreground: 222 47% 11%;           /* slate-900 #0f172a */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card: 0 0% 100%;                   /* white */
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 0 72% 36%;
+    --primary: 221 83% 53%;              /* blue-600  #2563eb */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 44 100% 51%;
-    --secondary-foreground: 0 0% 8%;
+    --secondary: 271 81% 56%;            /* purple-600 #9333ea */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 30 10% 93%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 214 32% 91%;                /* slate-200 #e2e8f0 */
+    --muted-foreground: 215 20% 65%;     /* slate-400 #94a3b8 */
 
-    --accent: 44 100% 51%;
-    --accent-foreground: 0 0% 8%;
+    --accent: 221 83% 53%;               /* blue-600 */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 10% 88%;
-    --input: 30 10% 88%;
-    --ring: 44 100% 51%;
+    --border: 214 32% 91%;               /* slate-200 */
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;                 /* blue-600 */
 
     --radius: 0.875rem;
 
@@ -40,76 +41,78 @@
     --success-foreground: 0 0% 100%;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 0 72% 36%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 44 100% 51%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 32% 91%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
   }
 
   .dark {
-    --background: 0 0% 6%;
-    --foreground: 0 0% 96%;
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 96%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 0 72% 36%;
+    --background: 222 84% 5%;            /* slate-950 #020617 */
+    --foreground: 210 40% 98%;           /* slate-50 */
+    --card: 222 47% 11%;                 /* slate-900 */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 44 100% 51%;
-    --secondary-foreground: 0 0% 8%;
-    --muted: 0 5% 18%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 44 100% 51%;
-    --accent-foreground: 0 0% 8%;
+    --secondary: 271 81% 56%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 221 83% 53%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 5% 20%;
-    --input: 0 5% 20%;
-    --ring: 44 100% 51%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 221 83% 53%;
     --success: 152 60% 45%;
     --success-foreground: 0 0% 100%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
 }
 
 @layer components {
-  /* Premium gradient background */
+  /* ── Hero gradient — UNAI Tech: deep navy → blue → purple ── */
   .bg-premium-gradient {
-    background: linear-gradient(145deg, hsl(0, 72%, 32%) 0%, hsl(0, 60%, 24%) 40%, hsl(350, 50%, 18%) 70%, hsl(30, 40%, 14%) 100%);
+    background: linear-gradient(
+      145deg,
+      hsl(222, 84%, 5%)  0%,
+      hsl(222, 60%, 10%) 35%,
+      hsl(240, 50%, 14%) 65%,
+      hsl(271, 50%, 16%) 100%
+    );
   }
 
-  /* Glass card effect */
+  /* ── Glass card ── */
   .glass-card {
-    background: hsl(var(--card) / 0.95);
+    background: hsl(var(--card) / 0.97);
     backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--border) / 0.6);
+    border: 1px solid hsl(var(--border) / 0.7);
     box-shadow:
-      0 4px 6px -1px hsl(0 0% 0% / 0.04),
-      0 20px 50px -12px hsl(0 0% 0% / 0.12),
-      0 0 0 1px hsl(0 0% 100% / 0.05) inset;
+      0 4px 6px -1px hsl(0 0% 0% / 0.05),
+      0 20px 50px -12px hsl(221 83% 53% / 0.10),
+      0 0 0 1px hsl(0 0% 100% / 0.06) inset;
   }
 
-  /* Floating label group */
-  .floating-group {
-    @apply relative;
-  }
+  /* ── Floating label group ── */
+  .floating-group { @apply relative; }
 
   .floating-input {
     @apply w-full px-4 pt-5 pb-2 text-sm rounded-xl border border-border bg-background text-foreground
@@ -142,7 +145,7 @@
   .floating-select {
     @apply w-full px-4 pt-5 pb-2 text-sm rounded-xl border border-border bg-background text-foreground
       outline-none transition-all duration-300 appearance-none cursor-pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1rem center;
   }
@@ -163,23 +166,23 @@
     color: hsl(var(--primary));
   }
 
-  /* Premium button */
+  /* ── Primary button — UNAI Tech blue → purple gradient ── */
   .btn-premium {
     @apply relative py-3.5 px-8 font-semibold rounded-xl text-sm tracking-wide
-      overflow-hidden transition-all duration-300;
-    background: linear-gradient(135deg, hsl(44, 100%, 51%) 0%, hsl(38, 100%, 42%) 100%);
-    color: hsl(var(--secondary-foreground));
-    box-shadow: 0 4px 15px hsl(44 100% 51% / 0.3);
+      overflow-hidden transition-all duration-300 text-white;
+    background: linear-gradient(135deg, hsl(221, 83%, 53%) 0%, hsl(271, 81%, 56%) 100%);
+    box-shadow: 0 4px 15px hsl(221 83% 53% / 0.35);
   }
 
   .btn-premium:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 25px hsl(44 100% 51% / 0.4);
+    box-shadow: 0 6px 25px hsl(221 83% 53% / 0.45);
+    background: linear-gradient(135deg, hsl(221, 83%, 48%) 0%, hsl(271, 81%, 52%) 100%);
   }
 
   .btn-premium:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: 0 2px 8px hsl(44 100% 51% / 0.3);
+    box-shadow: 0 2px 8px hsl(221 83% 53% / 0.3);
   }
 
   .btn-premium:disabled {
@@ -201,10 +204,8 @@
     transform: translateY(0) scale(0.98);
   }
 
-  /* Promo code input */
-  .promo-field-wrapper {
-    @apply relative;
-  }
+  /* ── Promo code input ── */
+  .promo-field-wrapper { @apply relative; }
 
   .promo-input {
     @apply w-full pl-10 pr-4 py-3 text-sm rounded-xl border border-border bg-background text-foreground
@@ -212,25 +213,25 @@
   }
 
   .promo-input::placeholder {
-    @apply font-sans tracking-normal normal-case text-muted-foreground;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     letter-spacing: normal;
     text-transform: none;
+    @apply text-muted-foreground;
   }
 
   .promo-input:focus {
-    border-color: hsl(44, 100%, 51%);
-    box-shadow: 0 0 0 3px hsl(44 100% 51% / 0.15);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
   }
 
-  /* Transaction ID input */
+  /* ── Transaction ID input ── */
   .txn-input {
     @apply w-full pl-10 pr-4 py-3 text-sm rounded-xl border border-border bg-background text-foreground
       outline-none transition-all duration-300 font-mono tracking-wider;
   }
 
   .txn-input::placeholder {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     letter-spacing: normal;
     @apply text-muted-foreground;
   }
@@ -241,76 +242,44 @@
   }
 }
 
-/* Success checkmark animation */
-@keyframes check-stroke {
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes check-circle {
-  0% {
-    stroke-dashoffset: 240;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes check-fill {
-  100% {
-    box-shadow: inset 0 0 0 80px hsl(152, 60%, 45%);
-  }
-}
-
-@keyframes check-scale {
-  0%, 100% {
-    transform: none;
-  }
-  50% {
-    transform: scale3d(1.1, 1.1, 1);
-  }
-}
+/* ── Success checkmark animation ── */
+@keyframes check-stroke  { 100% { stroke-dashoffset: 0; } }
+@keyframes check-circle  { 0% { stroke-dashoffset: 240; } 100% { stroke-dashoffset: 0; } }
+@keyframes check-fill    { 100% { box-shadow: inset 0 0 0 80px hsl(152, 60%, 45%); } }
+@keyframes check-scale   { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
 
 .success-checkmark {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  display: block;
-  stroke-width: 2.5;
-  stroke: hsl(152, 60%, 45%);
-  stroke-miterlimit: 10;
+  width: 140px; height: 140px; border-radius: 50%; display: block;
+  stroke-width: 2.5; stroke: hsl(152, 60%, 45%); stroke-miterlimit: 10;
   box-shadow: inset 0 0 0 hsl(152, 60%, 45%);
-  animation: check-fill 0.4s ease-in-out 0.4s forwards,
-    check-scale 0.3s ease-in-out 0.9s both;
+  animation: check-fill 0.4s ease-in-out 0.4s forwards, check-scale 0.3s ease-in-out 0.9s both;
 }
 
 .success-checkmark__circle {
-  stroke-dasharray: 240;
-  stroke-dashoffset: 240;
-  stroke-width: 2.5;
-  stroke-miterlimit: 10;
-  stroke: hsl(152, 60%, 45%);
-  fill: none;
+  stroke-dasharray: 240; stroke-dashoffset: 240; stroke-width: 2.5;
+  stroke-miterlimit: 10; stroke: hsl(152, 60%, 45%); fill: none;
   animation: check-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
 }
 
 .success-checkmark__check {
-  transform-origin: 50% 50%;
-  stroke-dasharray: 48;
-  stroke-dashoffset: 48;
-  stroke-width: 3.5;
-  stroke: white;
-  fill: none;
+  transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48;
+  stroke-width: 3.5; stroke: white; fill: none;
   animation: check-stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
 }
 
-/* Stagger fade-in for form fields */
+/* ── Shimmer animation (upload bar) ── */
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.animate-shimmer { animation: shimmer 2s linear infinite; }
+
+/* ── Stagger delays ── */
 .stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.10s; }
 .stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.2s; }
+.stagger-4 { animation-delay: 0.20s; }
 .stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.3s; }
+.stagger-6 { animation-delay: 0.30s; }
 .stagger-7 { animation-delay: 0.35s; }
-.stagger-8 { animation-delay: 0.4s; }
+.stagger-8 { animation-delay: 0.40s; }

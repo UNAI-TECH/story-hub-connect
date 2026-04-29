@@ -62,7 +62,7 @@ const SuccessScreen = ({ promoApplied }: SuccessScreenProps) => {
             Registration Confirmed! 🎉
           </h2>
           <p className="text-primary-foreground/70 text-sm sm:text-base leading-relaxed mb-2">
-            Welcome to <strong className="text-yellow-300">Future Forge 2026</strong> by Story Seed Studio!
+            Welcome to <strong className="text-blue-300">Future Forge 2026</strong> by Story Seed Studio!
           </p>
           <p className="text-primary-foreground/60 text-sm leading-relaxed">
             {promoApplied
@@ -71,8 +71,8 @@ const SuccessScreen = ({ promoApplied }: SuccessScreenProps) => {
           </p>
 
           {promoApplied && (
-            <div className="mt-4 inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/40 rounded-full px-4 py-1.5">
-              <span className="text-xs font-bold text-yellow-300">✦ Promo Discount Applied</span>
+            <div className="mt-4 inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/40 rounded-full px-4 py-1.5">
+              <span className="text-xs font-bold text-blue-300">✦ Promo Discount Applied</span>
             </div>
           )}
         </div>

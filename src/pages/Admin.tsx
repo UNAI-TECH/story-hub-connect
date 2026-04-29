@@ -173,7 +173,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top bar */}
-      <header className="sticky top-0 z-20 bg-gradient-to-r from-[#7B0D0D] to-[#3a0606] shadow-lg">
+      <header className="sticky top-0 z-20 bg-gradient-to-r from-[#0f172a] to-[#1e3a8a] shadow-lg">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src="/Untitled design (3).png" alt="Logo" className="h-10 object-contain" />
@@ -232,15 +232,14 @@ export default function Admin() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800
-                outline-none focus:border-[#7B0D0D] focus:ring-2 focus:ring-[#7B0D0D]/10 transition-all"
+                outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all"
             />
           </div>
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
             className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 outline-none
-              focus:border-[#7B0D0D] cursor-pointer min-w-[160px]"
-          >
+              focus:border-blue-600 cursor-pointer min-w-[160px]"          >
             <option value="All">All Statuses</option>
             <option value="Pending">Pending</option>
             <option value="Verified">Verified</option>
