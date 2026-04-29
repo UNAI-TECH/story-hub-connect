@@ -96,19 +96,26 @@ const StepTwo = ({
                 : "bg-gradient-to-r from-slate-800 to-blue-900"
             }`}>
               <p className="text-xs font-bold uppercase tracking-widest text-white/80 mb-0.5">
-                {promoApplied ? "✦ Discounted Price ✦" : "Standard Registration"}
+                {promoApplied ? "✦ Promo Applied ✦" : "Standard Registration"}
               </p>
-              <p className="text-white font-semibold text-sm">
-                Future Forge 2026 — Story Seed Studio
-              </p>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                {promoApplied ? (
+                  <>
+                    <span className="text-white/60 line-through text-sm font-medium">₹599</span>
+                    <span className="text-white text-xl font-bold">₹299</span>
+                  </>
+                ) : (
+                  <span className="text-white text-xl font-bold">₹599</span>
+                )}
+              </div>
             </div>
 
             {/* QR Image */}
             <div className="bg-white p-6 flex flex-col items-center gap-4">
               <img
                 src={promoApplied ? "/qr-discounted.png" : "/qr-regular.png"}
-                alt={promoApplied ? "Discounted payment QR code" : "Standard payment QR code"}
-                className="w-56 h-56 object-contain rounded-xl"
+                alt={promoApplied ? "Scan to pay ₹299" : "Scan to pay ₹599"}
+                className="w-56 h-56 object-contain rounded-xl border border-gray-100 shadow-sm p-2"
               />
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-800">
@@ -116,8 +123,8 @@ const StepTwo = ({
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {promoApplied
-                    ? "Scan to pay the discounted amount."
-                    : "Scan to pay the registration amount."}
+                    ? "Scan with GPay/PhonePe/Paytm to pay ₹299"
+                    : "Scan with GPay/PhonePe/Paytm to pay ₹599"}
                 </p>
               </div>
             </div>
