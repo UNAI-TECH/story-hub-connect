@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Loader2, Tag, ArrowLeft, CheckCircle2, Hash, ImageUp, XCircle, Info } from "lucide-react";
+import { Upload, FileCheck, Loader2, ArrowRight, ArrowLeft, Tag, Smartphone, CheckCircle2, Hash, ImageUp, XCircle, Info } from "lucide-react";
 
 interface StepTwoProps {
   promoApplied: boolean;
@@ -117,15 +117,27 @@ const StepTwo = ({
                 alt={promoApplied ? "Scan to pay ₹299" : "Scan to pay ₹599"}
                 className="w-56 h-56 object-contain rounded-xl border border-gray-100 shadow-sm p-2"
               />
-              <div className="text-center">
+              <div className="text-center w-full mt-2">
                 <p className="text-sm font-medium text-gray-800">
                   Hi, <span className="text-primary font-semibold">{studentName || "Student"}</span>!
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1 mb-5">
                   {promoApplied
                     ? "Scan with GPay/PhonePe/Paytm to pay ₹299"
                     : "Scan with GPay/PhonePe/Paytm to pay ₹599"}
                 </p>
+                
+                {/* Mobile Pay Button */}
+                <a
+                  href={promoApplied 
+                    ? "upi://pay?pa=8838571152@okbizaxis&pn=Storyseedsstudio&am=299&cu=INR"
+                    : "upi://pay?pa=8838571152@okbizaxis&pn=Storyseedsstudio&am=599&cu=INR"
+                  }
+                  className="sm:hidden flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 active:scale-[0.98] transition-all"
+                >
+                  <Smartphone className="w-4 h-4" />
+                  Tap to Pay via UPI App
+                </a>
               </div>
             </div>
           </div>
